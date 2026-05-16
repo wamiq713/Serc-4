@@ -127,10 +127,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Session fetching logic
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) fetchProfile(session.user.id);
       else setLoading(false);
+    }).catch(err => {
+      console.error("Auth session error:", err);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -142,7 +146,18 @@ export default function App() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Fallback timer: skip loading screen if it takes too long (likely connection error)
+    const timer = setTimeout(() => {
+      setLoading(p => {
+        if (p) console.warn("Loading timed out. Proceeding regardless of session state.");
+        return false;
+      });
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -153,25 +168,35 @@ export default function App() {
   }, [session]);
 
   const fetchProfile = async (id: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (!error) setProfile(data);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (!error) setProfile(data);
+    } catch (err) {
+      console.error("Profile fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080a0f] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
+      <div className="min-h-screen bg-black flex items-center justify-center p-10">
+        <div className="flex flex-col items-center gap-8 max-w-sm text-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-red-600/20 blur-[30px] rounded-full animate-pulse"></div>
-            <Activity size={64} className="text-red-600 relative z-10 animate-bounce" />
+            <div className="absolute inset-0 bg-red-600/20 blur-[40px] rounded-full animate-pulse"></div>
+            <Activity size={80} className="text-red-600 relative z-10 animate-bounce" />
           </div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic animate-pulse">Establishing Strategic Connection...</p>
+          <div className="space-y-4">
+            <p className="text-[12px] font-black text-white uppercase tracking-[0.6em] italic animate-pulse">Establishing Tactical Link...</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+              Contacting SERS Core Infrastructure. If this persists, verify your <span className="text-red-500">VITE_SUPABASE_*</span> Environment Variables on Vercel.
+            </p>
+          </div>
         </div>
       </div>
     );
