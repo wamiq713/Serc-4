@@ -1,0 +1,10 @@
+{
+  "name": "Smart Emergency Response System",
+  "description": "An intelligent urban traffic accident management platform using DAA algorithms for optimized dispatching and routing.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
