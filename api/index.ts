@@ -38,6 +38,7 @@ app.post("/api/ai/analyze-accident", async (req, res) => {
     if (!description) return res.status(400).json({ error: "Description required" });
 
     const ai = getGenAI();
+    
     const prompt = `Analyze this emergency incident report and provide a 1-sentence priority level (High, Medium, Low) and a 1-sentence recommended action: "${description}"`;
     
     const response = await ai.models.generateContent({
