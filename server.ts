@@ -30,7 +30,14 @@ async function startServer() {
       if (!apiKey) {
         throw new Error("GEMINI_API_KEY is not configured on the server.");
       }
-      genAI = new GoogleGenAI({ apiKey });
+      genAI = new GoogleGenAI({ 
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
     }
     return genAI;
   };
@@ -47,13 +54,14 @@ async function startServer() {
       if (!description) return res.status(400).json({ error: "Description required" });
 
       const ai = getGenAI();
-      const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
       const prompt = `Analyze this emergency incident report and provide a 1-sentence priority level (High, Medium, Low) and a 1-sentence recommended action: "${description}"`;
       
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+      
+      const text = response.text;
       
       res.json({ analysis: text });
     } catch (error: any) {
